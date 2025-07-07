@@ -152,6 +152,77 @@ public class GenesisDBClient {
         return responseString
     }
 
+    /// Observe events for a given subject in real-time
+    /// - Parameter subject: The subject to observe events for
+    /// - Returns: AsyncSequence of events
+    public func observeEvents(subject: String) -> AsyncThrowingStream<Event, Error> {
+        return AsyncThrowingStream { continuation in
+            Task {
+                do {
+                    let url = buildURL(path: "observe")
+                    let body = ["subject": subject]
+
+                    let request = try buildRequest(
+                        url: url,
+                        method: "POST",
+                        body: body,
+                        acceptHeader: "application/x-ndjson"
+                    )
+
+                    let (data, response) = try await session.data(for: request)
+
+                    try validateResponse(response)
+
+                    // Process the stream data
+                    guard let string = String(data: data, encoding: .utf8) else {
+                        throw GenesisDBError.invalidResponse("Could not decode response as string")
+                    }
+
+                    let lines = string.components(separatedBy: .newlines)
+
+                    for line in lines {
+                        let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !trimmedLine.isEmpty else { continue }
+
+                        do {
+                            // Handle Server-Sent Events format (data: prefix)
+                            let jsonString = trimmedLine.hasPrefix("data: ") ?
+                                String(trimmedLine.dropFirst(6)) : trimmedLine
+
+                            let eventData = jsonString.data(using: .utf8)!
+                            let event = try jsonDecoder.decode(Event.self, from: eventData)
+
+                            // Set default values if not provided
+                            var finalEvent = event
+                            if finalEvent.id == nil {
+                                finalEvent = Event(
+                                    id: UUID().uuidString,
+                                    source: finalEvent.source ?? config.apiURL,
+                                    subject: finalEvent.subject,
+                                    type: finalEvent.type,
+                                    time: finalEvent.time ?? RFC3339Time(Date()),
+                                    data: finalEvent.data,
+                                    dataContentType: finalEvent.dataContentType ?? "application/json",
+                                    specVersion: finalEvent.specVersion ?? "1.0"
+                                )
+                            }
+
+                            continuation.yield(finalEvent)
+                        } catch {
+                            print("Error parsing event: \(error)")
+                            print("Problem with JSON: \(trimmedLine)")
+                            // Continue processing other events instead of failing completely
+                        }
+                    }
+
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
+    }
+
     // MARK: - Private Methods
 
     private func buildURL(path: String) -> URL {

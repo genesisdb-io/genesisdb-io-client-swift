@@ -72,6 +72,45 @@ do {
 }
 ```
 
+### Observing Events in Real-Time
+
+```swift
+import GenesisDB
+
+do {
+    let eventStream = client.observeEvents(subject: "/foo/21")
+
+    for try await event in eventStream {
+        print("Received event: \(event.type)")
+        print("Data: \(event.data)")
+    }
+} catch {
+    print("Error observing events: \(error)")
+}
+```
+
+You can also observe events with error handling and filtering:
+
+```swift
+import GenesisDB
+
+do {
+    let eventStream = client.observeEvents(subject: "/foo/21")
+
+    for try await event in eventStream {
+        // Filter events based on type
+        guard event.type.contains("foo") else { continue }
+
+        // Process the event
+        await processEvent(event)
+    }
+} catch GenesisDBError.apiError(let statusCode, let message) {
+    print("API Error (\(statusCode)): \(message)")
+} catch {
+    print("Error: \(error)")
+}
+```
+
 ### Committing Events
 
 ```swift
