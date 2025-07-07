@@ -61,8 +61,10 @@ public class GenesisDBClient {
     }
 
     /// Commit events to the database
-    /// - Parameter events: Array of events to commit
-    public func commitEvents(_ events: [Event]) async throws {
+    /// - Parameters:
+    ///   - events: Array of events to commit
+    ///   - preconditions: Optional array of preconditions to check before committing
+    public func commitEvents(_ events: [Event], preconditions: [Precondition]? = nil) async throws {
         let url = buildURL(path: "commit")
 
         // Prepare events with default values
@@ -82,7 +84,12 @@ public class GenesisDBClient {
             }
         }
 
-        let body = ["events": preparedEvents]
+        // Build request body
+        var body: [String: Any] = ["events": preparedEvents]
+        if let preconditions = preconditions {
+            body["preconditions"] = preconditions
+        }
+
         let request = try buildRequest(url: url, method: "POST", body: body)
 
         let (_, response) = try await session.data(for: request)
@@ -163,25 +170,41 @@ public class GenesisDBClient {
         request.httpMethod = method
         request.setValue("Bearer \(config.authToken)", forHTTPHeaderField: "Authorization")
         request.setValue(config.userAgent, forHTTPHeaderField: "User-Agent")
-        
+
         if let acceptHeader = acceptHeader {
             request.setValue(acceptHeader, forHTTPHeaderField: "Accept")
         }
-        
+
         if let body = body {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            
-            // Check if body contains events array
-            if let events = body["events"] as? [Event] {
-                // Use JSONEncoder for Event arrays
-                let eventsBody = ["events": events]
-                request.httpBody = try jsonEncoder.encode(eventsBody)
+
+            // Check if body contains events array or preconditions
+            let hasEvents = body["events"] as? [Event] != nil
+            let hasPreconditions = body["preconditions"] as? [Precondition] != nil
+
+            if hasEvents || hasPreconditions {
+                // Create a proper structure for encoding
+                if let events = body["events"] as? [Event] {
+                    if let preconditions = body["preconditions"] as? [Precondition] {
+                        // Both events and preconditions
+                        let commitRequest = CommitRequest(events: events, preconditions: preconditions)
+                        request.httpBody = try jsonEncoder.encode(commitRequest)
+                    } else {
+                        // Only events
+                        let commitRequest = CommitRequest(events: events, preconditions: nil)
+                        request.httpBody = try jsonEncoder.encode(commitRequest)
+                    }
+                } else if let preconditions = body["preconditions"] as? [Precondition] {
+                    // Only preconditions (unlikely but possible)
+                    let commitRequest = CommitRequest(events: [], preconditions: preconditions)
+                    request.httpBody = try jsonEncoder.encode(commitRequest)
+                }
             } else {
                 // Use JSONSerialization for simple dictionaries
                 request.httpBody = try JSONSerialization.data(withJSONObject: body)
             }
         }
-        
+
         return request
     }
 
@@ -262,5 +285,18 @@ public class GenesisDBClient {
         }
 
         return results
+    }
+}
+
+// MARK: - Private Helper Structs
+
+/// Private struct for encoding commit requests with events and preconditions
+private struct CommitRequest: Codable {
+    let events: [Event]
+    let preconditions: [Precondition]?
+
+    init(events: [Event], preconditions: [Precondition]?) {
+        self.events = events
+        self.preconditions = preconditions
     }
 }

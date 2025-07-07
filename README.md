@@ -77,46 +77,13 @@ do {
 ```swift
 import GenesisDB
 
-// Example for creating new events
 let events = [
     Event(
         source: "io.genesisdb.app",
-        subject: "/customer",
-        type: "io.genesisdb.app.customer-added",
+        subject: "/foo/21",
+        type: "io.genesisdb.app.foo-added",
         data: [
-            "firstName": "Bruce",
-            "lastName": "Wayne",
-            "emailAddress": "bruce.wayne@enterprise.wayne"
-        ]
-    ),
-    Event(
-        source: "io.genesisdb.app",
-        subject: "/customer",
-        type: "io.genesisdb.app.customer-added",
-        data: [
-            "firstName": "Alfred",
-            "lastName": "Pennyworth",
-            "emailAddress": "alfred.pennyworth@enterprise.wayne"
-        ]
-    ),
-    Event(
-        source: "io.genesisdb.store",
-        subject: "/article",
-        type: "io.genesisdb.store.article-added",
-        data: [
-            "name": "Tumbler",
-            "color": "black",
-            "price": 2990000.00
-        ]
-    ),
-    Event(
-        source: "io.genesisdb.app",
-        subject: "/customer/fed2902d-0135-460d-8605-263a06308448",
-        type: "io.genesisdb.app.customer-personaldata-changed",
-        data: [
-            "firstName": "Angus",
-            "lastName": "MacGyver",
-            "emailAddress": "angus.macgyer@phoenix.foundation"
+            "value": "Foo"
         ]
     )
 ]
@@ -127,6 +94,49 @@ do {
 } catch {
     print("Error committing events: \(error)")
 }
+```
+
+#### Committing Events with Preconditions
+
+You can optionally provide preconditions to the `commitEvents` method. Preconditions allow you to enforce certain checks on the server before committing events. For example, you can require that a subject is new:
+
+```swift
+import GenesisDB
+
+let events = [
+    Event(
+        source: "io.genesisdb.app",
+        subject: "/foo/21",
+        type: "io.genesisdb.app.foo-added",
+        data: [
+            "value": "Foo"
+        ]
+    )
+]
+
+let preconditions = [
+    Precondition(
+        type: "isSubjectNew",
+        payload: [
+            "subject": "/foo/21"
+        ]
+    )
+]
+
+do {
+    try await client.commitEvents(events, preconditions: preconditions)
+    print("Events committed successfully with preconditions")
+} catch {
+    print("Error committing events: \(error)")
+}
+```
+
+You can also use convenience initializers:
+
+```swift
+let preconditions = [
+    Precondition.isSubjectNew(subject: "/foo/21")
+]
 ```
 
 ### Querying Events
@@ -189,6 +199,23 @@ public struct Event: Codable {
     public let dataContentType: String?       // Content type
     public let specVersion: String?           // Specification version
 }
+```
+
+## Precondition Model
+
+The `Precondition` struct allows you to specify checks that must pass before events are committed:
+
+```swift
+public struct Precondition: Codable {
+    public let type: String
+    public let payload: [String: Any]
+}
+```
+
+You can use the provided convenience initializers for common preconditions:
+
+```swift
+let precondition = Precondition.isSubjectNew(subject: "/some/subject")
 ```
 
 ## Error Handling
