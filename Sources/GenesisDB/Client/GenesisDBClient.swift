@@ -39,12 +39,31 @@ public class GenesisDBClient {
 
     // MARK: - Public Methods
 
-    /// Stream events for a given subject
-    /// - Parameter subject: The subject to stream events for
+    /// Stream events for a given subject with optional lower bound
+    /// - Parameters:
+    ///   - subject: The subject to stream events for
+    ///   - lowerBound: Optional lower bound event ID
+    ///   - includeLowerBoundEvent: Whether to include the lower bound event in results
     /// - Returns: Array of events
-    public func streamEvents(subject: String) async throws -> [Event] {
+    public func streamEvents(subject: String, lowerBound: String? = nil, includeLowerBoundEvent: Bool? = nil, latestByEventType: String? = nil) async throws -> [Event] {
         let url = buildURL(path: "stream")
-        let body = ["subject": subject]
+
+        var body: [String: Any] = ["subject": subject]
+
+        var options: [String: Any] = [:]
+        if let lowerBound = lowerBound {
+            options["lowerBound"] = lowerBound
+        }
+        if let includeLowerBoundEvent = includeLowerBoundEvent {
+            options["includeLowerBoundEvent"] = includeLowerBoundEvent
+        }
+        if let latestByEventType = latestByEventType {
+            options["latestByEventType"] = latestByEventType
+        }
+
+        if !options.isEmpty {
+            body["options"] = options
+        }
 
         let request = try buildRequest(
             url: url,
@@ -79,7 +98,8 @@ public class GenesisDBClient {
                     time: preparedEvents[i].time ?? RFC3339Time(Date()),
                     data: preparedEvents[i].data,
                     dataContentType: preparedEvents[i].dataContentType ?? "application/json",
-                    specVersion: preparedEvents[i].specVersion ?? "1.0"
+                    specVersion: preparedEvents[i].specVersion ?? "1.0",
+                    options: preparedEvents[i].options
                 )
             }
         }
@@ -152,15 +172,46 @@ public class GenesisDBClient {
         return responseString
     }
 
-    /// Observe events for a given subject in real-time
-    /// - Parameter subject: The subject to observe events for
+    /// Erase data for a subject (GDPR compliance)
+    /// - Parameter subject: The subject to erase data for
+    public func eraseData(subject: String) async throws {
+        let url = buildURL(path: "erase")
+        let body = ["subject": subject]
+
+        let request = try buildRequest(url: url, method: "POST", body: body)
+
+        let (_, response) = try await session.data(for: request)
+
+        try validateResponse(response)
+    }
+
+    /// Observe events for a given subject in real-time with optional lower bound
+    /// - Parameters:
+    ///   - subject: The subject to observe events for
+    ///   - lowerBound: Optional lower bound event ID
+    ///   - includeLowerBoundEvent: Whether to include the lower bound event in results
     /// - Returns: AsyncSequence of events
-    public func observeEvents(subject: String) -> AsyncThrowingStream<Event, Error> {
+    public func observeEvents(subject: String, lowerBound: String? = nil, includeLowerBoundEvent: Bool? = nil, latestByEventType: String? = nil) -> AsyncThrowingStream<Event, Error> {
         return AsyncThrowingStream { continuation in
             Task {
                 do {
                     let url = buildURL(path: "observe")
-                    let body = ["subject": subject]
+                    var body: [String: Any] = ["subject": subject]
+
+                    var options: [String: Any] = [:]
+                    if let lowerBound = lowerBound {
+                        options["lowerBound"] = lowerBound
+                    }
+                    if let includeLowerBoundEvent = includeLowerBoundEvent {
+                        options["includeLowerBoundEvent"] = includeLowerBoundEvent
+                    }
+                    if let latestByEventType = latestByEventType {
+                        options["latestByEventType"] = latestByEventType
+                    }
+
+                    if !options.isEmpty {
+                        body["options"] = options
+                    }
 
                     let request = try buildRequest(
                         url: url,

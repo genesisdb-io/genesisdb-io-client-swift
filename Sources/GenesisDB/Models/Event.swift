@@ -26,6 +26,8 @@ public struct Event: Codable {
     /// Specification version
     public let specVersion: String?
 
+    public let options: [String: Any]?
+
     public init(
         id: String? = nil,
         source: String? = nil,
@@ -34,7 +36,8 @@ public struct Event: Codable {
         time: RFC3339Time? = nil,
         data: [String: Any],
         dataContentType: String? = nil,
-        specVersion: String? = nil
+        specVersion: String? = nil,
+        options: [String: Any]? = nil
     ) {
         self.id = id
         self.source = source
@@ -44,6 +47,7 @@ public struct Event: Codable {
         self.data = data
         self.dataContentType = dataContentType
         self.specVersion = specVersion
+        self.options = options
     }
 
     // MARK: - Codable
@@ -57,6 +61,7 @@ public struct Event: Codable {
         case data
         case dataContentType = "datacontenttype"
         case specVersion = "specversion"
+        case options
     }
 
     public init(from decoder: Decoder) throws {
@@ -77,6 +82,9 @@ public struct Event: Codable {
         } else {
             data = [:]
         }
+
+        // Handle options
+        options = try container.decodeIfPresent([String: AnyCodable].self, forKey: .options)?.mapValues { $0.value }
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -90,6 +98,9 @@ public struct Event: Codable {
         try container.encode(AnyCodable(data), forKey: .data)
         try container.encodeIfPresent(dataContentType, forKey: .dataContentType)
         try container.encodeIfPresent(specVersion, forKey: .specVersion)
+        if let options = options {
+            try container.encode(options.mapValues { AnyCodable($0) }, forKey: .options)
+        }
     }
 }
 

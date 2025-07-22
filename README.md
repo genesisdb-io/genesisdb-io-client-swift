@@ -72,6 +72,47 @@ do {
 }
 ```
 
+### Stream Events from lower bound
+
+```swift
+import GenesisDB
+
+do {
+    let events = try await client.streamEvents(
+        subject: "/",
+        lowerBound: "2d6d4141-6107-4fb2-905f-445730f4f2a9",
+        includeLowerBoundEvent: true
+    )
+
+    for event in events {
+        print("Event Type: \(event.type), Data: \(event.data)")
+    }
+} catch {
+    print("Error streaming events: \(error)")
+}
+```
+
+### Stream Events with latest by event type
+
+```swift
+import GenesisDB
+
+do {
+    let events = try await client.streamEvents(
+        subject: "/",
+        latestByEventType: "io.genesisdb.foo.foobarfoo-updated"
+    )
+
+    for event in events {
+        print("Event Type: \(event.type), Data: \(event.data)")
+    }
+} catch {
+    print("Error streaming events: \(error)")
+}
+```
+
+This feature allows you to stream only the latest event of a specific type for each subject. Useful for getting the current state of entities.
+
 ### Observing Events in Real-Time
 
 ```swift
@@ -79,6 +120,27 @@ import GenesisDB
 
 do {
     let eventStream = client.observeEvents(subject: "/foo/21")
+
+    for try await event in eventStream {
+        print("Received event: \(event.type)")
+        print("Data: \(event.data)")
+    }
+} catch {
+    print("Error observing events: \(error)")
+}
+```
+
+### Observe Events from lower bound (Message queue)
+
+```swift
+import GenesisDB
+
+do {
+    let eventStream = client.observeEvents(
+        subject: "/customer",
+        lowerBound: "2d6d4141-6107-4fb2-905f-445730f4f2a9",
+        includeLowerBoundEvent: true
+    )
 
     for try await event in eventStream {
         print("Received event: \(event.type)")
@@ -132,6 +194,46 @@ do {
     print("Events successfully committed")
 } catch {
     print("Error committing events: \(error)")
+}
+```
+
+### Usage of referenced data (GDPR)
+
+```swift
+import GenesisDB
+
+let events = [
+    Event(
+        source: "io.genesisdb.app",
+        subject: "/foo/21",
+        type: "io.genesisdb.app.foo-added",
+        data: [
+            "value": "Foo"
+        ],
+        options: [
+            "storeDataAsReference": true
+        ]
+    )
+]
+
+do {
+    try await client.commitEvents(events)
+    print("Events committed with data stored as reference")
+} catch {
+    print("Error committing events: \(error)")
+}
+```
+
+### Deleting referenced data (GDPR)
+
+```swift
+import GenesisDB
+
+do {
+    try await client.eraseData(subject: "/foo/21")
+    print("Data successfully erased")
+} catch {
+    print("Error erasing data: \(error)")
 }
 ```
 

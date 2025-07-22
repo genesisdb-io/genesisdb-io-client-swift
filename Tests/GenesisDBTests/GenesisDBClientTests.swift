@@ -252,6 +252,49 @@ final class GenesisDBClientTests: XCTestCase {
         */
     }
 
+    func testStreamEventsWithLatestByEventType() async throws {
+        // This test requires a running GenesisDB server
+        // Uncomment and configure when testing against a real server
+
+        /*
+        let events = [
+            Event(
+                source: "io.genesisdb.test",
+                subject: "/test/latest",
+                type: "io.genesisdb.test.latest-test",
+                data: [
+                    "message": "Test for Latest By Event Type",
+                    "timestamp": Int(Date().timeIntervalSince1970)
+                ]
+            )
+        ]
+
+        do {
+            // Commit events
+            try await client.commitEvents(events)
+            print("Events successfully committed")
+
+            // Stream events with latest by event type
+            let latestEvents = try await client.streamEvents(
+                subject: "/test/latest",
+                latestByEventType: "io.genesisdb.test.latest-test"
+            )
+
+            XCTAssertFalse(latestEvents.isEmpty, "Should find events with latestByEventType")
+
+            let foundLatest = latestEvents.contains { event in
+                event.type == "io.genesisdb.test.latest-test" &&
+                event.data["message"] as? String == "Test for Latest By Event Type"
+            }
+            XCTAssertTrue(foundLatest, "Latest event not found in database")
+
+        } catch {
+            // This is expected if no server is running
+            print("Latest by event type test skipped - no server running: \(error)")
+        }
+        */
+    }
+
     func testQueryIntegration() async throws {
         // This test requires a running GenesisDB server
         // Uncomment and configure when testing against a real server
