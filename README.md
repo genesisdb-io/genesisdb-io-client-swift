@@ -303,6 +303,24 @@ do {
 }
 ```
 
+### Querying Events (Alternative Method)
+
+```swift
+import GenesisDB
+
+let query = "FROM e IN events WHERE e.type == \"io.genesisdb.app.customer-added\" ORDER BY e.time DESC TOP 20 PROJECT INTO { subject: e.subject, firstName: e.data.firstName }"
+
+do {
+    let results = try await client.queryEvents(query)
+
+    for result in results {
+        print("Result: \(result)")
+    }
+} catch {
+    print("Error executing query: \(error)")
+}
+```
+
 ### Health Checks
 
 ```swift

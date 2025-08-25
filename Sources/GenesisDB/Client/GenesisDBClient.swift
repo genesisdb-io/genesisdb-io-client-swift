@@ -138,6 +138,17 @@ public class GenesisDBClient {
         return try parseNDJSONResults(data: data)
     }
 
+    /// Query events using the same functionality as the query method
+    /// - Parameter query: The query string to execute
+    /// - Returns: Array of query results
+    /// - Example:
+    ///   ```swift
+    ///   let results = try await client.queryEvents("FROM e IN events WHERE e.type == \"io.genesisdb.app.customer-added\" ORDER BY e.time DESC TOP 20 PROJECT INTO { subject: e.subject, firstName: e.data.firstName }")
+    ///   ```
+    public func queryEvents(_ query: String) async throws -> [[String: Any]] {
+        return try await self.query(query)
+    }
+
     /// Ping the API to check connectivity
     /// - Returns: Ping response string
     public func ping() async throws -> String {
