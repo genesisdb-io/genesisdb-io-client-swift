@@ -489,4 +489,10 @@ The `GenesisDBClient` is thread-safe and can be used from multiple threads concu
 
 ## License
 
-Copyright © 2025 Genesis DB. All rights reserved.
+MIT
+
+## Author
+
+* E-Mail: mail@genesisdb.io
+* URL: https://www.genesisdb.io
+* Docs: https://docs.genesisdb.io
