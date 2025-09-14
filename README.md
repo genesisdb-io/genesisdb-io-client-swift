@@ -272,11 +272,83 @@ do {
 }
 ```
 
-You can also use convenience initializers:
+
+## Preconditions
+
+Preconditions allow you to enforce certain checks on the server before committing events. Genesis DB supports multiple precondition types:
+
+### isSubjectNew
+Ensures that a subject is new (has no existing events):
+
+```swift
+let events = [
+    Event(
+        source: "io.genesisdb.app",
+        subject: "/foo/21",
+        type: "io.genesisdb.app.foo-added",
+        data: [
+            "value": "Foo"
+        ]
+    )
+]
+
+let preconditions = [
+    Precondition(
+        type: "isSubjectNew",
+        payload: [
+            "subject": "/foo/21"
+        ]
+    )
+]
+
+do {
+    try await client.commitEvents(events, preconditions: preconditions)
+    print("Events committed successfully with preconditions")
+} catch {
+    print("Error committing events: \(error)")
+}
+```
+
+### isQueryResultTrue
+Evaluates a query and ensures the result is truthy:
+
+```swift
+let events = [
+    Event(
+        source: "io.genesisdb.app",
+        subject: "/event/conf-2024",
+        type: "io.genesisdb.app.registration-added",
+        data: [
+            "attendeeName": "Alice",
+            "eventId": "conf-2024"
+        ]
+    )
+]
+
+let preconditions = [
+    Precondition(
+        type: "isQueryResultTrue",
+        payload: [
+            "query": "FROM e IN events WHERE e.data.eventId == 'conf-2024' PROJECT INTO COUNT() < 500"
+        ]
+    )
+]
+
+do {
+    try await client.commitEvents(events, preconditions: preconditions)
+    print("Event committed successfully with query precondition")
+} catch {
+    print("Error committing events: \(error)")
+}
+```
+
+### Convenience Methods
+You can use convenience initializers for common preconditions:
 
 ```swift
 let preconditions = [
-    Precondition.isSubjectNew(subject: "/foo/21")
+    Precondition.isSubjectNew(subject: "/foo/21"),
+    Precondition.isQueryResultTrue(query: "FROM e IN events WHERE e.data.eventId == 'conf-2024' PROJECT INTO COUNT() < 500")
 ]
 ```
 
@@ -345,7 +417,7 @@ do {
 
 ## Event Model
 
-The `Event` struct represents an event in the GenesisDB system:
+The `Event` struct represents an event in the Genesis DB system:
 
 ```swift
 public struct Event: Codable {

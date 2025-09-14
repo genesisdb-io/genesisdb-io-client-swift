@@ -1,7 +1,7 @@
 import Foundation
 import Crypto
 
-/// Main client for interacting with GenesisDB
+/// Main client for interacting with Genesis DB
 public class GenesisDBClient {
     private let config: Config
     private let session: URLSession

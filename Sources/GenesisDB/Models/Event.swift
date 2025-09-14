@@ -1,6 +1,6 @@
 import Foundation
 
-/// Represents an event in the GenesisDB system
+/// Represents an event in the Genesis DB system
 public struct Event: Codable {
     /// Unique identifier for the event
     public let id: String?

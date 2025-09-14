@@ -5,7 +5,7 @@ import GenesisDB
 
 struct ObserveExample {
     static func demonstrateObserveEvents() async {
-        print("GenesisDB Swift SDK - Observe Events Example")
+        print("Genesis DB Swift SDK - Observe Events Example")
         print("=============================================")
 
         let config = Config(

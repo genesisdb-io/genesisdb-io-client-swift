@@ -6,7 +6,7 @@ import GenesisDB
 @main
 struct BasicUsageExample {
     static func main() async {
-        print("GenesisDB Swift SDK - Basic Usage Example")
+        print("Genesis DB Swift SDK - Basic Usage Example")
         print("==========================================")
 
         // Create configuration
@@ -18,11 +18,11 @@ struct BasicUsageExample {
 
         // Initialize client
         guard let client = try? GenesisDBClient(config: config) else {
-            print("❌ Failed to create client")
+            print("Failed to create client")
             return
         }
 
-        print("✅ Client created successfully")
+        print("Client created successfully")
 
         // Test connectivity
         await testConnectivity(client)
@@ -37,29 +37,29 @@ struct BasicUsageExample {
     // MARK: - Connectivity Tests
 
     static func testConnectivity(_ client: GenesisDBClient) async {
-        print("\n🔍 Testing connectivity...")
+        print("\nTesting connectivity...")
 
         // Ping test
         do {
             let pingResponse = try await client.ping()
-            print("✅ Ping successful: \(pingResponse)")
+            print("Ping successful: \(pingResponse)")
         } catch {
-            print("❌ Ping failed: \(error)")
+            print("Ping failed: \(error)")
         }
 
         // Audit test
         do {
             let auditResponse = try await client.audit()
-            print("✅ Audit successful: \(auditResponse)")
+            print("Audit successful: \(auditResponse)")
         } catch {
-            print("❌ Audit failed: \(error)")
+            print("Audit failed: \(error)")
         }
     }
 
     // MARK: - Event Operations
 
     static func testEventOperations(_ client: GenesisDBClient) async {
-        print("\n📝 Testing event operations...")
+        print("\nTesting event operations...")
 
         // Create test events
         let events = [
@@ -90,16 +90,16 @@ struct BasicUsageExample {
         // Commit events
         do {
             try await client.commitEvents(events)
-            print("✅ Events committed successfully")
+            print("Events committed successfully")
         } catch {
-            print("❌ Failed to commit events: \(error)")
+            print("Failed to commit events: \(error)")
             return
         }
 
         // Stream customer events
         do {
             let customerEvents = try await client.streamEvents(subject: "/example/customer")
-            print("✅ Retrieved \(customerEvents.count) customer events")
+            print("Retrieved \(customerEvents.count) customer events")
 
             for event in customerEvents {
                 print("  - Event ID: \(event.id ?? "N/A")")
@@ -107,13 +107,13 @@ struct BasicUsageExample {
                 print("  - Data: \(event.data)")
             }
         } catch {
-            print("❌ Failed to stream customer events: \(error)")
+            print("Failed to stream customer events: \(error)")
         }
 
         // Stream product events
         do {
             let productEvents = try await client.streamEvents(subject: "/example/product")
-            print("✅ Retrieved \(productEvents.count) product events")
+            print("Retrieved \(productEvents.count) product events")
 
             for event in productEvents {
                 print("  - Event ID: \(event.id ?? "N/A")")
@@ -121,14 +121,14 @@ struct BasicUsageExample {
                 print("  - Data: \(event.data)")
             }
         } catch {
-            print("❌ Failed to stream product events: \(error)")
+            print("Failed to stream product events: \(error)")
         }
     }
 
     // MARK: - Querying
 
     static func testQuerying(_ client: GenesisDBClient) async {
-        print("\n🔍 Testing querying...")
+        print("\nTesting querying...")
 
         let query = """
         FROM e IN events
@@ -144,8 +144,8 @@ struct BasicUsageExample {
 
         do {
             let results = try await client.query(query)
-            print("✅ Query executed successfully")
-            print("📊 Retrieved \(results.count) results:")
+            print("Query executed successfully")
+            print("Retrieved \(results.count) results:")
 
             for (index, result) in results.enumerated() {
                 print("  Result \(index + 1):")
@@ -154,7 +154,7 @@ struct BasicUsageExample {
                 }
             }
         } catch {
-            print("❌ Query failed: \(error)")
+            print("Query failed: \(error)")
         }
     }
 }
@@ -163,7 +163,7 @@ struct BasicUsageExample {
 
 struct AdvancedUsageExample {
     static func demonstrateAdvancedFeatures() async {
-        print("\n🚀 Advanced Usage Example")
+        print("\nAdvanced Usage Example")
         print("=========================")
 
         // Create configuration with custom settings
@@ -172,11 +172,11 @@ struct AdvancedUsageExample {
             apiVersion: "v1",
             authToken: "your-auth-token",
             timeout: 60.0,  // 60 second timeout
-            userAgent: "MyApp/1.0 GenesisDB-Swift-SDK"
+            userAgent: "MyApp/1.0 Genesis-DB-Swift-SDK"
         )
 
         guard let client = try? GenesisDBClient(config: config) else {
-            print("❌ Failed to create client")
+            print("Failed to create client")
             return
         }
 
@@ -210,28 +210,28 @@ struct AdvancedUsageExample {
 
         do {
             try await client.commitEvents(batchEvents)
-            print("✅ Batch of \(batchEvents.count) events committed")
+            print("Batch of \(batchEvents.count) events committed")
 
             // Stream all batch events
             let streamedEvents = try await client.streamEvents(subject: "/batch/test")
-            print("✅ Retrieved \(streamedEvents.count) batch events")
+            print("Retrieved \(streamedEvents.count) batch events")
 
         } catch {
-            print("❌ Batch processing failed: \(error)")
+            print("Batch processing failed: \(error)")
         }
     }
 
     static func demonstrateErrorHandling(_ client: GenesisDBClient) async {
-        print("\n⚠️ Error Handling Demonstration")
+        print("\nError Handling Demonstration")
 
         // Test with invalid subject
         do {
             let events = try await client.streamEvents(subject: "/invalid/subject")
             print("Unexpected success with invalid subject")
         } catch GenesisDBError.apiError(let statusCode, let message) {
-            print("✅ Caught API error: \(statusCode) - \(message)")
+            print("Caught API error: \(statusCode) - \(message)")
         } catch {
-            print("✅ Caught other error: \(error)")
+            print("Caught other error: \(error)")
         }
 
         // Test with invalid query
@@ -239,9 +239,9 @@ struct AdvancedUsageExample {
             let results = try await client.query("INVALID QUERY SYNTAX")
             print("Unexpected success with invalid query")
         } catch GenesisDBError.apiError(let statusCode, let message) {
-            print("✅ Caught API error: \(statusCode) - \(message)")
+            print("Caught API error: \(statusCode) - \(message)")
         } catch {
-            print("✅ Caught other error: \(error)")
+            print("Caught other error: \(error)")
         }
     }
 }
