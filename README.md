@@ -1,6 +1,20 @@
 # Genesis DB Swift SDK
 
-This is the official Swift SDK for Genesis DB. It provides a simple interface to interact with the Genesis DB API using modern Swift concurrency.
+This is the official Swift SDK for Genesis DB, an awesome and production ready event store database system for building event-driven apps.
+
+## Genesis DB Advantages
+
+* Incredibly fast when reading, fast when writing 🚀
+* Easy backup creation and recovery
+* [CloudEvents](https://cloudevents.io/) compatible
+* GDPR-ready
+* Easily accessible via the HTTP interface
+* Auditable. Guarantee database consistency
+* Logging and metrics for Prometheus
+* SQL like query language called Genesis DB Query Language (GDBQL)
+* ...
+
+This SDK provides a simple interface to interact with the Genesis DB API using modern Swift concurrency.
 
 ## Requirements
 
@@ -92,6 +106,7 @@ do {
 }
 ```
 
+
 ### Stream Events with latest by event type
 
 ```swift
@@ -100,7 +115,7 @@ import GenesisDB
 do {
     let events = try await client.streamEvents(
         subject: "/",
-        latestByEventType: "io.genesisdb.foo.foobarfoo-updated"
+        latestByEventType: "io.genesisdb.app.customer-updated"
     )
 
     for event in events {
@@ -119,7 +134,7 @@ This feature allows you to stream only the latest event of a specific type for e
 import GenesisDB
 
 do {
-    let eventStream = client.observeEvents(subject: "/foo/21")
+    let eventStream = client.observeEvents(subject: "/user/456")
 
     for try await event in eventStream {
         print("Received event: \(event.type)")
@@ -151,13 +166,34 @@ do {
 }
 ```
 
+
+### Observe Latest Events by Event Type (Message queue)
+
+```swift
+import GenesisDB
+
+do {
+    let eventStream = client.observeEvents(
+        subject: "/customer",
+        latestByEventType: "io.genesisdb.app.customer-updated"
+    )
+
+    for try await event in eventStream {
+        print("Latest event: \(event.type)")
+        print("Data: \(event.data)")
+    }
+} catch {
+    print("Error observing events: \(error)")
+}
+```
+
 You can also observe events with error handling and filtering:
 
 ```swift
 import GenesisDB
 
 do {
-    let eventStream = client.observeEvents(subject: "/foo/21")
+    let eventStream = client.observeEvents(subject: "/user/456")
 
     for try await event in eventStream {
         // Filter events based on type
@@ -205,10 +241,12 @@ import GenesisDB
 let events = [
     Event(
         source: "io.genesisdb.app",
-        subject: "/foo/21",
-        type: "io.genesisdb.app.foo-added",
+        subject: "/user/456",
+        type: "io.genesisdb.app.user-created",
         data: [
-            "value": "Foo"
+            "firstName": "John",
+            "lastName": "Doe",
+            "email": "john.doe@example.com"
         ],
         options: [
             "storeDataAsReference": true
@@ -230,7 +268,7 @@ do {
 import GenesisDB
 
 do {
-    try await client.eraseData(subject: "/foo/21")
+    try await client.eraseData(subject: "/user/456")
     print("Data successfully erased")
 } catch {
     print("Error erasing data: \(error)")
@@ -247,10 +285,12 @@ import GenesisDB
 let events = [
     Event(
         source: "io.genesisdb.app",
-        subject: "/foo/21",
-        type: "io.genesisdb.app.foo-added",
+        subject: "/user/456",
+        type: "io.genesisdb.app.user-created",
         data: [
-            "value": "Foo"
+            "firstName": "John",
+            "lastName": "Doe",
+            "email": "john.doe@example.com"
         ]
     )
 ]
@@ -259,7 +299,7 @@ let preconditions = [
     Precondition(
         type: "isSubjectNew",
         payload: [
-            "subject": "/foo/21"
+            "subject": "/user/456"
         ]
     )
 ]
@@ -284,10 +324,12 @@ Ensures that a subject is new (has no existing events):
 let events = [
     Event(
         source: "io.genesisdb.app",
-        subject: "/foo/21",
-        type: "io.genesisdb.app.foo-added",
+        subject: "/user/456",
+        type: "io.genesisdb.app.user-created",
         data: [
-            "value": "Foo"
+            "firstName": "John",
+            "lastName": "Doe",
+            "email": "john.doe@example.com"
         ]
     )
 ]
@@ -296,7 +338,7 @@ let preconditions = [
     Precondition(
         type: "isSubjectNew",
         payload: [
-            "subject": "/foo/21"
+            "subject": "/user/456"
         ]
     )
 ]
@@ -310,17 +352,19 @@ do {
 ```
 
 ### isQueryResultTrue
-Evaluates a query and ensures the result is truthy:
+Evaluates a query and ensures the result is truthy. Supports the full GDBQL feature set including complex WHERE clauses, aggregations, and calculated fields.
 
+**Basic uniqueness check:**
 ```swift
 let events = [
     Event(
         source: "io.genesisdb.app",
-        subject: "/event/conf-2024",
-        type: "io.genesisdb.app.registration-added",
+        subject: "/user/456",
+        type: "io.genesisdb.app.user-created",
         data: [
-            "attendeeName": "Alice",
-            "eventId": "conf-2024"
+            "firstName": "John",
+            "lastName": "Doe",
+            "email": "john.doe@example.com"
         ]
     )
 ]
@@ -329,28 +373,93 @@ let preconditions = [
     Precondition(
         type: "isQueryResultTrue",
         payload: [
-            "query": "FROM e IN events WHERE e.data.eventId == 'conf-2024' PROJECT INTO COUNT() < 500"
+            "query": "STREAM e FROM events WHERE e.data.email == 'john.doe@example.com' MAP COUNT() == 0"
         ]
     )
 ]
 
 do {
     try await client.commitEvents(events, preconditions: preconditions)
-    print("Event committed successfully with query precondition")
+    print("User created with uniqueness check")
 } catch {
     print("Error committing events: \(error)")
 }
 ```
 
-### Convenience Methods
-You can use convenience initializers for common preconditions:
-
+**Business rule enforcement (transaction limits):**
 ```swift
-let preconditions = [
-    Precondition.isSubjectNew(subject: "/foo/21"),
-    Precondition.isQueryResultTrue(query: "FROM e IN events WHERE e.data.eventId == 'conf-2024' PROJECT INTO COUNT() < 500")
+let events = [
+    Event(
+        source: "io.genesisdb.banking",
+        subject: "/user/123/transactions",
+        type: "io.genesisdb.banking.transaction-processed",
+        data: [
+            "amount": 500.00,
+            "currency": "EUR"
+        ]
+    )
 ]
+
+let preconditions = [
+    Precondition(
+        type: "isQueryResultTrue",
+        payload: [
+            "query": "STREAM e FROM events WHERE e.subject UNDER '/user/123' AND e.type == 'transaction-processed' AND e.time >= '2024-01-01T00:00:00Z' MAP SUM(e.data.amount) + 500 <= 10000"
+        ]
+    )
+]
+
+do {
+    try await client.commitEvents(events, preconditions: preconditions)
+    print("Transaction processed with limit check")
+} catch {
+    print("Error committing events: \(error)")
+}
 ```
+
+**Complex validation with aggregations:**
+```swift
+let events = [
+    Event(
+        source: "io.genesisdb.events",
+        subject: "/conference/2024/registrations",
+        type: "io.genesisdb.events.registration-created",
+        data: [
+            "attendeeId": "att-789",
+            "ticketType": "premium"
+        ]
+    )
+]
+
+let preconditions = [
+    Precondition(
+        type: "isQueryResultTrue",
+        payload: [
+            "query": "STREAM e FROM events WHERE e.subject UNDER '/conference/2024/registrations' AND e.type == 'registration-created' GROUP BY e.data.ticketType HAVING e.data.ticketType == 'premium' MAP COUNT() < 50"
+        ]
+    )
+]
+
+do {
+    try await client.commitEvents(events, preconditions: preconditions)
+    print("Registration created with capacity check")
+} catch {
+    print("Error committing events: \(error)")
+}
+```
+
+**Supported GDBQL Features in Preconditions:**
+- WHERE conditions with AND/OR/IN/BETWEEN operators
+- Hierarchical subject queries (UNDER, DESCENDANTS)
+- Aggregation functions (COUNT, SUM, AVG, MIN, MAX)
+- GROUP BY with HAVING clauses
+- ORDER BY and LIMIT clauses
+- Calculated fields and expressions
+- Nested field access (e.data.address.city)
+- String concatenation and arithmetic operations
+
+If a precondition fails, the commit returns HTTP 412 (Precondition Failed) with details about which condition failed.
+
 
 ### Querying Events
 
@@ -358,10 +467,10 @@ let preconditions = [
 import GenesisDB
 
 let query = """
-FROM e IN events
+STREAM e FROM events
 WHERE e.type == 'io.genesisdb.app.customer-added'
 ORDER BY e.time
-PROJECT INTO { id: e.id, firstName: e.data.firstName, lastName: e.data.lastName }
+MAP { id: e.id, firstName: e.data.firstName, lastName: e.data.lastName }
 """
 
 do {
@@ -380,7 +489,7 @@ do {
 ```swift
 import GenesisDB
 
-let query = "FROM e IN events WHERE e.type == \"io.genesisdb.app.customer-added\" ORDER BY e.time DESC TOP 20 PROJECT INTO { subject: e.subject, firstName: e.data.firstName }"
+let query = "STREAM e FROM events WHERE e.type == \"io.genesisdb.app.customer-added\" ORDER BY e.time DESC LIMIT 20 MAP { subject: e.subject, firstName: e.data.firstName }"
 
 do {
     let results = try await client.queryEvents(query)
@@ -393,7 +502,8 @@ do {
 }
 ```
 
-### Health Checks
+
+## Health Checks
 
 ```swift
 import GenesisDB
@@ -406,7 +516,7 @@ do {
     print("Error pinging API: \(error)")
 }
 
-// Run audit
+// Run audit to check event consistency
 do {
     let response = try await client.audit()
     print("Audit response: \(response)")
@@ -443,10 +553,13 @@ public struct Precondition: Codable {
 }
 ```
 
-You can use the provided convenience initializers for common preconditions:
+You can create preconditions using the standard initializer:
 
 ```swift
-let precondition = Precondition.isSubjectNew(subject: "/some/subject")
+let precondition = Precondition(
+    type: "isSubjectNew",
+    payload: ["subject": "/some/subject"]
+)
 ```
 
 ## Error Handling
