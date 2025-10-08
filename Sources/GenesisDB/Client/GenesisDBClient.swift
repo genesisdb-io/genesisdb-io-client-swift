@@ -252,6 +252,14 @@ public class GenesisDBClient {
                                 String(trimmedLine.dropFirst(6)) : trimmedLine
 
                             let eventData = jsonString.data(using: .utf8)!
+
+                            // Check if this is an empty payload object with only one key
+                            if let jsonObject = try? JSONSerialization.jsonObject(with: eventData) as? [String: Any],
+                               let payload = jsonObject["payload"] as? String,
+                               payload.isEmpty && jsonObject.count == 1 {
+                                continue
+                            }
+
                             let event = try jsonDecoder.decode(Event.self, from: eventData)
 
                             // Set default values if not provided
