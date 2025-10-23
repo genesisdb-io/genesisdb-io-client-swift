@@ -22,7 +22,7 @@ public struct Config {
         apiVersion: String,
         authToken: String,
         timeout: TimeInterval = 30.0,
-        userAgent: String = "inoovum-genesisdb-sdk-swift"
+        userAgent: String = "genesisdb-sdk"
     ) {
         self.apiURL = apiURL
         self.apiVersion = apiVersion
