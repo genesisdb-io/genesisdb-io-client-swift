@@ -1,8 +1,8 @@
 import Foundation
 
-/// Configuration for the Genesis DB client
+/// Configuration for the GenesisDB client
 public struct Config {
-    /// The URL of the Genesis DB API
+    /// The URL of the GenesisDB API
     public let apiURL: String
 
     /// The version of the API to use

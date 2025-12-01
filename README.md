@@ -1,8 +1,8 @@
-# Genesis DB Swift SDK
+# GenesisDB Swift SDK
 
-This is the official Swift SDK for Genesis DB, an awesome and production ready event store database system for building event-driven apps.
+This is the official Swift SDK for GenesisDB, an awesome and production ready event store database system for building event-driven apps.
 
-## Genesis DB Advantages
+## GenesisDB Advantages
 
 * Incredibly fast when reading, fast when writing 🚀
 * Easy backup creation and recovery
@@ -11,10 +11,10 @@ This is the official Swift SDK for Genesis DB, an awesome and production ready e
 * Easily accessible via the HTTP interface
 * Auditable. Guarantee database consistency
 * Logging and metrics for Prometheus
-* SQL like query language called Genesis DB Query Language (GDBQL)
+* SQL like query language called GenesisDB Query Language (GDBQL)
 * ...
 
-This SDK provides a simple interface to interact with the Genesis DB API using modern Swift concurrency.
+This SDK provides a simple interface to interact with the GenesisDB API using modern Swift concurrency.
 
 ## Requirements
 
@@ -43,7 +43,7 @@ Or add it directly in Xcode:
 
 The SDK requires the following environment variables to be set:
 
-* `GENESISDB_API_URL`: The URL of the Genesis DB API
+* `GENESISDB_API_URL`: The URL of the GenesisDB API
 * `GENESISDB_API_VERSION`: The version of the API to use
 * `GENESISDB_AUTH_TOKEN`: Your authentication token
 
@@ -315,7 +315,7 @@ do {
 
 ## Preconditions
 
-Preconditions allow you to enforce certain checks on the server before committing events. Genesis DB supports multiple precondition types:
+Preconditions allow you to enforce certain checks on the server before committing events. GenesisDB supports multiple precondition types:
 
 ### isSubjectNew
 Ensures that a subject is new (has no existing events):
@@ -561,7 +561,7 @@ do {
 
 ## Event Model
 
-The `Event` struct represents an event in the Genesis DB system:
+The `Event` struct represents an event in the GenesisDB system:
 
 ```swift
 public struct Event: Codable {

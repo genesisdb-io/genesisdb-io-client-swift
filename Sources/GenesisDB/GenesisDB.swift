@@ -1,5 +1,5 @@
-// This file is part of the Genesis DB Swift SDK.
-// Copyright © 2024 Genesis DB. All rights reserved.
+// This file is part of the GenesisDB Swift SDK.
+// Copyright © 2024 GenesisDB. All rights reserved.
 
 @_exported import Foundation
 
