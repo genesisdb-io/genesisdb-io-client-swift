@@ -15,9 +15,6 @@ let package = Package(
         .library(
             name: "GenesisDB",
             targets: ["GenesisDB"]),
-        .executable(
-            name: "TestConnection",
-            targets: ["TestConnection"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-crypto.git", from: "2.0.0"),
